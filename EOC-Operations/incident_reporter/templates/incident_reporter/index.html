@@ -1,0 +1,120 @@
+{% load static %}
+{% load leaflet_tags %}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Maps</title>
+
+    {% leaflet_js %}
+    {% leaflet_css %}
+    
+  
+    <link rel="stylesheet" href="{% static 'incident_reporter/styles.min.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    
+    <script src="{% static 'incident_reporter/Leaflet.Spin-1.1.2/example/spin/dist/spin.min.js' %}"></script>
+    <script src="{% static 'incident_reporter/Leaflet.Spin-1.1.2/leaflet.spin.js' %}"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.72.2/dist/L.Control.Locate.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.72.2/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+    
+    <link rel="stylesheet" href="{% static 'incident_reporter/leaflet-search-master/src/leaflet-search.css' %}" />
+    <script src="{% static 'incident_reporter/leaflet-search-master/src/leaflet-search.js' %}"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js" integrity="sha512-Abr21JO2YqcJ03XGZRPuZSWKBhJpUAR6+2wH5zBeO4wAw4oksr8PRdF+BKIRsxvCdq+Mv4670rZ+dLnIyabbGw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <style>
+
+
+    .leaflet-container {  /* all maps */
+    width:  60%;
+    height: 67vh;}
+    
+    #specialbigmap {
+    height: 50%;}
+
+    /* Resize the "display_raw" textbox */
+    .django-leaflet-raw-textarea {
+    width: 100%;}
+
+    
+    
+        
+    </style>
+</head>
+
+<body style="background-color: rgb(246,246,246);">
+    
+    {% leaflet_map "mymap" %}
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'incident_reporter/script.min.js' %}"></script>
+    
+    <script>
+        
+        let mydataurl = "{% url 'incident_data' %}"
+        window.addEventListener("map:init",  function (event, dataurl =mydataurl) {
+        let map = event.detail.map;
+        L.control.locate({locateOptions: {enableHighAccuracy: true}}).addTo(map);
+        // Download GeoJSON data with Ajax
+        console.log("Loading...")
+        
+        map.spin(true);
+              
+        fetch(dataurl)
+          .then(function(resp) {
+            console.log ("fetching")
+    
+            return resp.json();
+            
+          }).then(function(data) {
+              map.spin(false);
+              let clusters = L.markerClusterGroup();
+              map.addLayer(clusters);
+              
+              
+        
+              for (let i = 0; i < Object.keys(data['features']).length; i++) {
+                 
+            
+    
+                  let detail = data['features'][i]['properties'];
+
+                  let content = `<h4><b>${detail.incident_date_time}</b></h4>
+                  <p><b>Purpose: </b>${detail.purpose}</p>
+                  <p><b>Intervention: </b>${detail.intervention}</p>
+                  <p><b>status: </b>${detail.status}</p>
+                  <p><b>county: </b>${detail.county}</p>`;
+
+
+                  
+                  let coords = data['features'][i]['geometry']['coordinates'];
+    
+                  let marker = L.marker(new L.LatLng(coords[1], coords[0]));
+                  marker.bindPopup(content);
+                  clusters.addLayer(marker);
+                  
+                  
+                
+                };
+                     
+              
+              });
+
+        
+      });
+
+
+    </script>
+</body>
+
+</html>
